@@ -1,0 +1,50 @@
+sudo apt-get update
+# 업데이트 
+
+sudo apt-get -y install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+# 관련 패키지 설치
+
+
+# apt package index update 맟 관련 package 설치
+
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+
+# Docker Official GPG Key 등록
+## * gpg란 ?
+- GNU Privacy Guard (GnuPG)의 줄임말로서 배포 파일의 인증을 확인하는데 사용되는 자유 소프트웨어 패키지
+
+
+add-apt-repository \
+"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+# apt repository에 docker repository 추가
+
+
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+
+# Docker Engine 설치(자동으로 최신 버전이 설치된다.)
+
+docker --version
+
+# Docker 버전확인
+
+
+(한줄 요약)
+
+sudo apt-get remove docker docker-engine docker.io containerd runc
+sudo apt-get update
+sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common -y
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+# docker.io 명령어가 변경되었다. 아래 명령어로 입력한다
+apt install docker.io
