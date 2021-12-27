@@ -1,3 +1,6 @@
+###################################################################################
+Ubuntu
+
 sudo apt-get update
 # 업데이트 
 
@@ -48,3 +51,45 @@ sudo apt-get update
 sudo apt-get install docker-ce docker-ce-cli containerd.io -y
 # docker.io 명령어가 변경되었다. 아래 명령어로 입력한다
 apt install docker.io
+
+
+############################################################################
+CentOS
+
+CentOS
+
+참고 블로그
+https://jjeongil.tistory.com/1273
+
+1. OS update 및 패키지 파일 설치
+sudo yum update
+sudo yum install wget
+sudo yum install yum-utils device-mapper-persistent-data lvm2
+
+2. Docker Repository 시스템 추가
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+yum-config-manager \ 
+--add-repo \
+https://download.docker.com/linux/centos/docker-ce.repo
+
+3. 현재 사용가능한 최신 버전의 도커 엔진 설치
+wget -qO- get.docker.com | sh
+
+
+4. Docker deamon 등록
+sudo systemctl start docker
+sudo systemctl enable docker
+
+5. docker 확인
+docker info
+sudo systemctl status docker
+
+
+
+
+
+
+
+
+
