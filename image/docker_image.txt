@@ -1,0 +1,7 @@
+REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
+wordpress    latest    c3c92cc3dcb1   4 days ago     616MB
+mysql        5.7       c20987f18b13   6 days ago     448MB
+mysql        latest    3218b38490ce   6 days ago     516MB
+ubuntu       latest    ba6acccedd29   2 months ago   72.8MB
+centos       7         eeb6ee3f44bd   3 months ago   204MB
+ubuntu       14.04     13b66b487594   9 months ago   197MB
