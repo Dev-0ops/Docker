@@ -1,0 +1,79 @@
+컨테이너가 볼륨을 활용하는 또다른 방법은 docker volume 명령어를 사용하는 방법이다.
+이는 도커 자체에서 제공하는 기능이다.
+* 기본적으로 볼륨 공유를 사용하지 않을 경우 모두 자동으로 도커 엔진이 관리하는,
+도커 볼륨을 사용하게 된다.
+
+
+# docker volume을 통한 myvolume 생성
+docker volume create --name myvolume
+
+# docker volume 조회
+docker volume ls
+
+DRIVER    VOLUME NAME
+local     3c3370fe5d0f4930a2267a39d6c4c4197a7fff07c06a4415ce3e67e6fc24f668
+local     37e82482054b289baab348c01565dc7eec6134a8aa3f7ac4bda6f3e2cd392b0f
+local     44ce4af78fb278f587048cf9434469bfb1cea03f5d5056e1103b88e6a14608a1
+local     840810cd056e9fc8479c6eec66bb5dc7b21a50b496e42bcbbf75d113891ea547
+local     075063705d8ae103cbd3c244d0fb61e4548499fa42e6ab6f2055d815a16a22f1
+local     myvolume
+
+# myvolume_1 컨테이너 생성 
+docker run -i -t \
+--name myvolume_1 \
+-v myvolume:/root/ \
+ubuntu:14.04
+
+# root/volume에 hello, volume! 파일 생성
+echo hello, volume! >> /root/volume
+
+# myvolume_2 컨테이너 생성
+docker run -i -t \
+--name myvolume_2 \
+-v myvolume:/root/ \
+ubuntu:14.04
+
+# 같은 디렉토리 공유 확인
+cat /root/volume
+hello, volume!
+
+* 도커 볼륨은 도커 엔진에서 관리하며, 호스트에 저장되지만 실제 어디에 저장되는지 사용자는 알 필요가 없다.
+그러나 docker inspect 명령어를 사용하면 실제 어디에 있는지 알 수 있다.
+
+docker inspect --type volume myvolume
+[
+    {
+        "CreatedAt": "2021-12-28T09:44:12Z",
+        "Driver": "local",
+        "Labels": {},
+        "Mountpoint": "/var/lib/docker/volumes/myvolume/_data",
+        "Name": "myvolume",
+        "Options": {},
+        "Scope": "local"
+    }
+]
+
+따라서 도커 볼륨의 호스트 디렉토리 경로를 따라가면 컨테이너에서 확인했던 데이터를 확인할 수 있다.
+ls /var/lib/docker/volumes/myvolume/_data
+volume
+
+cat /var/lib/docker/volumes/myvolume/_data/volume
+hello, volume!
+
+# 이때 -v 명령어를 사용했지만 호스트의 디렉토리를 설정하지 않을 경우
+docker run -i -t \
+--name volume_auto \
+-v /root \
+ubuntu:14.04
+
+* 컨테이너에서 공유할 디렉터리의 위치를 -v 옵션에 입력하면 해당 디렉토리에 대한
+도커 볼륨을 자동을 생성한다.
+
+
+** 도커 볼륨은 컨테이너를 삭제해도 남아있기 때문에 다음 명령어를 사용하면 한번에 지울 수 있다.
+* 사용중인 볼륨은 삭제하지 않는다.
+docker volume prune
+
+# 이때 --mount 옵션을 사용할 수 도 있지만, 그 기능은 같으며 볼륨의 정보를 나타내는 
+방법이 다르기 때문에 편한 옵션을 사용하면 된다.
+

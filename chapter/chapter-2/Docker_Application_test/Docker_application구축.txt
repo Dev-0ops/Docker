@@ -1,0 +1,49 @@
+MySQL 5.7 설치
+
+docker run -d \
+> --name wordpressdb \
+> -e MYSQL_ROOT_PASSWORD=password \
+> -e MYSQL_DATABASE=wordpress \
+> mysql:5.7
+
+* -d는 Detached, 백그라운드 옵션이다.
+* -e는 컨테이너 내부의 환경변수를 의미한다.
+
+Wordpress 설치
+
+docker run -d \
+> -e WORDPRESS_DB_HOST=mysql \
+> -e WORDPRESS_DB_USER=root \
+> -e WORDPRESS_DB_PASSWORD=password \
+> --name wordpress \
+> --link wordpressdb:mysql \
+> -p 80 \
+> wordpress
+
+* 이때 -p 80은 호스트의 포트 중 하나와 컨테이너의 80번 포트가 연결된 것을 의미.
+docker ps 명령어로 어느 포트와 연결됬는지 확인하고, 이를 호스트IP:랜덤포트로 접근가능하다.
+
+* 이때, 랜덤포트의 경우 컨테이너를 시작하고 종료할때 포트가 변경된다.
+
+mysql은 하나의 터미널을 차지하는mysqld를,
+wordpress는 하나의 터미널을 차지하는 apache2-foreground를 실행한다.
+따라서 -d 옵션을 지정해 백그라운드로 설정한다.
+(하지 않은 경우 계속 시스템로그가 터미널을 가득채울 것 이다.)
+
+특정 작업을 위해 셸 환경을 사용하려면 'docker attach' 명령어로 컨테이너 내부로 들어가야 하지만,
+-d 옵션으로 생성된 경우 attach 명령어를 쓰는 것이 의미가 없다.
+(실행ㅈ ㅜㅇ인 프로그램의 로그 출력을 보게 될 뿐)
+따라서 위 어플리케이션에서 상호 입출력이 가능한 배시 셸을 사용할기 위해선 다음과 같다.
+
+exec 명령어를 이용하여 /bin/bash 프로세스를 실행하고, -i, -t옵션을 사용해 배시 셸을 사용한다.
+
+docker exec -i -t wordpressdb /bin/bash
+docker exec wordpressdb ls 
+
+* exec 명령어를 사용하면 컨테이너 내부에서 명령어를 싱행한 뒤 그 결괏값을 반환받을 수 있다.
+그러나 여기서는 -i -t 옵션을 추가해 /bin/bash를 상호 입출력이 가능한 형태로 exec 명령어를 사용했다.
+
+
+
+
+

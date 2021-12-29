@@ -1,0 +1,59 @@
+컨테이너 내부의 로그는 운영 측면에서 가장 중요하다.
+애플리케이션 레벨에서 로그가 기록되도록 개발하는 방법도 있지만,
+도커의 경우 컨테이너의 표준 출력(StdOut)과 에러(StdErr) 로그를 별도의 메타데이터 파일로 저장하며,
+이를 확인하는 명령어를 제공한다.
+
+# 예제 컨테이너 생성
+docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=1234 mysql:5.7
+
+# mysql 로그 확인 
+docker logs mysql
+2021-12-29 08:32:56+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 5.7.36-1debian10 started.
+2021-12-29 08:32:56+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+2021-12-29 08:32:57+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 5.7.36-1debian10 started.
+2021-12-29 08:32:57+00:00 [Note] [Entrypoint]: Initializing database files
+2021-12-29T08:32:57.102263Z 0 [Warning] TIMESTAMP with implicit DEFAULT value is deprecated. Please use --explicit_defaults_for_timestamp server option (see documentation for more details).
+.....
+
+# 시작이 안되는 오류 컨테이너 생성
+docker run -d --name no_passwd_mysql mysql:5.7
+
+# docker ps로 확인
+docker ps --format "talbe{{.ID}}\t{{.Status}}\t{{.Ports}}\t{{.Names}}"
+talbefdbf5eedd515       Up 2 minutes    3306/tcp, 33060/tcp     mysql
+
+# no_passwd_mysql 실행
+docker start no_passwd_mysql
+no_passwd_mysql
+
+# docker ps로 재확인
+docker ps --format "talbe{{.ID}}\t{{.Status}}\t{{.Ports}}\t{{.Names}}"
+talbefdbf5eedd515       Up 3 minutes    3306/tcp, 33060/tcp     mysql
+
+# docker logs 명령어를 통해 실행되지 않는 애플리케이션 확인
+docker logs no_passwd_mysql
+2021-12-29 08:34:22+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 5.7.36-1debian10 started.
+2021-12-29 08:34:23+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+2021-12-29 08:34:23+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 5.7.36-1debian10 started.
+2021-12-29 08:34:23+00:00 [ERROR] [Entrypoint]: Database is uninitialized and password option is not specified
+    You need to specify one of the following:
+    - MYSQL_ROOT_PASSWORD
+    - MYSQL_ALLOW_EMPTY_PASSWORD
+    - MYSQL_RANDOM_ROOT_PASSWORD
+2021-12-29 08:36:31+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 5.7.36-1debian10 started.
+2021-12-29 08:36:31+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+2021-12-29 08:36:31+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 5.7.36-1debian10 started.
+2021-12-29 08:36:31+00:00 [ERROR] [Entrypoint]: Database is uninitialized and password option is not specified
+    You need to specify one of the following:
+    - MYSQL_ROOT_PASSWORD
+    - MYSQL_ALLOW_EMPTY_PASSWORD
+    - MYSQL_RANDOM_ROOT_PASSWORD
+
+# mysql에 필요한 환경변수를 지정하지 않았기 때문에 발생하는 문제(비밀번호 미 설정)
+
+
+* 컨테이너 로그는 JSON 형태로 도커 내부에 저장된다.
+cat /var/lib/docker/containers/${CONTAINER_ID}/${CONTAINER_ID}-json.log
+/var/lib/docker/containers/5aa574822e239d225a4150cb5d9ca494183351e8dd7845241ccf066bd53bb9af
+위와 같은 경로에 json.log가 숨겨져 있다.
+

@@ -1,0 +1,21 @@
+기본적으로 도커는 컨테이너에 172.17.0.x의 IP를 순차적으로 할당한다.
+
+
+docker run -i -t --name network_test ubuntu:14.04
+# port가 없는 container
+
+docker run -i -t --name mywebserver -p 80:80 ubuntu:14.04
+* -p 옵션은 호스트의 포트와 바인딩해 연결할 수 있게 설정한다.
+# 호스트의 7777번 포트와 컨테이너의 80번 포트와 연결할려면 7777:80과 같이 입력한다.
+## 호스트의 특정 IP를 사용하려면 192.168.0.100:7777:80과 같이 바인딩할 IP와 포트를 명시한다.
+### 여러 개의 포트를 외부에 개방하려면 -p 옵션을 여러번 사용한다.
+
+docker run -i -t -p 3306:3306 -p 35.216.77.12:7777:80 ubuntu
+* docker run -i -t -p 호스트 Port:3306 -p 호스트 IP:호스트 Port:80 ubuntu
+
+** -p 옵션은 그 기능이 portforwarding과 유사한데, 실제 옵션은 port가 아닌 portforwarding
+옵션이 맞다. 따라서 다음과 같다.
+1. 호스트 IP의 80번 포트로 접근
+2. 80번 포트는 컨테이너의 80번 포트로 포워딩
+3. 웹 서버 접근
+ 

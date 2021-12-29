@@ -1,0 +1,114 @@
+1. 컨테이너 버전 확인
+docker -v (실행 중이여야 함)
+
+2. 컨테이너 생성
+docker run -i -t ubuntu:14.04
+-i 컨테이너와 상호(interactive)입출력을 가능하게 한다.
+-t 옵션은 (try)로 
+-i,-t 옵션이 없으면 정상 적으로 셸을 사용할 수 없다.
+* 이때 ubuntu:14.04 이미지가 로컬에 없기 때문에 docker hub에 접근한다.
+
+3. 컨테이너 bash shell 탈출
+	1. exit (정지)
+	2. Ctrl + D (정지)
+	3. Ctrl + P, Q ( 중지하지 않고 탈출 )
+
+4. OS image
+	- docker pull centos:7
+	- docker pull unbuntu:14.04
+	- ex) docker pull(내려받기) OS:version
+
+5. 내려받은 이미지로 나의 이미지 생성
+docker create -i -t --name mycentos centos:7
+# create 명령어는 컨테이너 내부로 들어가지 않는다.
+
+6. 생성한 이미지 접근
+docker start mycentos
+# 컨테이너 시작
+docker attach mycentos
+# 컨테이너 접근
+
+7 run과 create의 차이
+# create는 실행을 하지 않는다는 차이가 있다, 때문에 일반적으로 run에 -i -t 옵션을 주고
+사용하는 경우가 더 많다
+
+
+8. 컨테이너 ID를 통한 실행
+컨테이너를 대상으로 하는 모든 명령어는 컨테이너의 이름 대신 ID를 쓸 수 있다.
+그러나 ID의 이름이 중복되지 않는 한 최소한으로 줄여 쓸 수 있다.
+docker start 5f372f9f2f23
+docker start 5f3
+docker start 5f3 x -> 5f37 (중복되는 경우)
+* Image ID와 다르다.
+** 컨테이너 ID는 무작위 16진수 해쉬 값이 적용된다.
+
+9. 실행중인 프로세스 확인
+docker ps
+# 아직 정지되지 않은 컨테이너만 출력된다. 
+
+10. 모든 컨테이너 출력
+docker ps -a
+
+CONTAINER ID   IMAGE          COMMAND       CREATED          STATUS                      PORTS     NAMES
+5f372f9f2f23   centos:7       "/bin/bash"   14 minutes ago   Exited (0) 3 minutes ago              mycentos
+15f1774947f9   ubuntu:14.04   "/bin/bash"   22 minutes ago   Exited (0) 20 minutes ago             thirsty_dijkstra
+
+11. 컨테이너 ID 조회
+docker inspect mycentos | grep Id
+#docker inspect "컨테이너명" | grep Id
+
+12. COMMAND 
+- 컨테이너가 시작될 때 실행될 명령어
+* 커맨드는 대부분의 이미지에 미리 내장돼 있기 때문에 설정할 필요가 없다.
+# 예를들어 centos:7 이미지에 /bin/bash라는 커맨드가 내장돼 있기 때문에 컨테이너를 생성할 때 별도의 커맨드를 설정하지 않았고,
+/bin/bash가 실행되었기 때문에 상호 입출력이 가능항 셸 환경을 사용할 수 있었다.
+
+docker run -i -t ubuntu:14.04 echo hello world!
+위 명령어의 경우 이미지에 내장장된 커맨드인 /bin/bash를 덮어쓰기 때문에 상호 입출력이 가능한 셸이
+실행되지 않아 'hello world!' 라는 내용만 출력되고 컨테이너가 종료된다.
+
+13. docker container 이름 변경
+CONTAINER ID   IMAGE          COMMAND       CREATED          STATUS                      PORTS     NAMES
+5f372f9f2f23   centos:7       "/bin/bash"   14 minutes ago   Exited (0) 3 minutes ago              mycentos
+15f1774947f9   ubuntu:14.04   "/bin/bash"   22 minutes ago   Exited (0) 20 minutes ago             thirsty_dijkstra
+
+* ubuntu 이미지의 이름을 생성할 때 지정하지 않았기 때문에 도커 엔진이 임의로 형용사와 명사를 무작위로 조합해 이름을 설정한다.
+
+docker rename thirsty_dijkstra ubuntu
+CONTAINER ID   IMAGE          COMMAND               CREATED          STATUS                      PORTS     NAMES
+77b751dc49e8   ubuntu:14.04   "echo hello world!"   2 minutes ago    Exited (0) 2 minutes ago              exciting_shirley
+5f372f9f2f23   centos:7       "/bin/bash"           21 minutes ago   Exited (0) 10 minutes ago             mycentos
+
+thirsty_dijkstra가 exciting_shirley로 바뀐 것을 볼 수 있다.
+여기서 다음과 같은 명령어를 사용한다면,
+
+docker rename exciting_shirley ubuntu
+
+CONTAINER ID   IMAGE          COMMAND               CREATED          STATUS                      PORTS     NAMES
+77b751dc49e8   ubuntu:14.04   "echo hello world!"   2 minutes ago    Exited (0) 2 minutes ago              exciting_shirley
+5f372f9f2f23   centos:7       "/bin/bash"           21 minutes ago   Exited (0) 10 minutes ago             mycentos
+15f1774947f9   ubuntu:14.04   "/bin/bash"           29 minutes ago   Exited (0) 27 minutes ago             ubuntu
+
+예상과는 다르게 exciting_shirley가 ubuntu로 변경되지 않고,
+새로 생성됨을 알 수 있다.
+
+14. 컨테이너 삭제
+
+docker rm exciting_shirley
+* 이때 실행중인 컨테이너는 삭제할 수 없다.
+
+docker rm -f mycentos
+* 실행중인 컨테이너 삭제
+
+docker container prune
+* 모든 컨테이너 삭제
+
+15. 전체 명령어
+docker ps -a -q
+# docker ID 만 출력
+
+docker stop &(docker ps -a -q)
+# 모든 컨테이너 정지
+
+docker rm &(docker ps -a -q)
+# 모든 컨테이너 삭제

@@ -1,0 +1,119 @@
+브리지 타입의 네트워크와 run 명령어의 --net-alias 옵션을 함께 쓰면 특정 호스트 이름으로
+컨테이너 여러 개에 접근할 수 있습니다.
+
+# mybridge 네트워크를 사용하는 alicek106 호스트 이름의 컨테이너1 
+docker run -i -t -d --name network_alias_container1 \
+--net mybridge \
+--net-alias alicek106 \
+ubuntu:14.04
+
+# mybridge 네트워크를 사용하는 alicek106 호스트 이름의 컨테이너2 
+docker run -i -t -d --name network_alias_container2 \
+--net mybridge \
+--net-alias alicek106 \
+ubuntu:14.04
+
+# mybridge 네트워크를 사용하는 alicek106 호스트 이름의 컨테이너3
+docker run -i -t -d --name network_alias_container3 \
+--net mybridge \
+--net-alias alicek106 \
+ubuntu:14.04
+
+# alicek106 호스트 이름의 컨테이너1의 IP 주소
+docker inspect network_alias_container1 | grep IPAddress
+            "SecondaryIPAddresses": null,
+            "IPAddress": "",
+            "IPAddress": "172.18.0.2",
+# alicek106 호스트 이름의 컨테이너2의 IP 주소
+docker inspect network_alias_container2 | grep IPAddress
+            "SecondaryIPAddresses": null,
+            "IPAddress": "",
+            "IPAddress": "172.18.0.3",
+
+# alicek106 호스트 이름의 컨테이너3의 IP 주소
+docker inspect network_alias_container3 | grep IPAddress
+            "SecondaryIPAddresses": null,
+            "IPAddress": "",
+             "IPAddress": "172.18.0.4",
+
+# Ping Testing
+
+# mybridge 네트워크를 사용하는 ping test 컨테이너 생성
+docker run -i -t --name network_alias_ping \
+--net mybridge \
+ubuntu:14.04
+
+# alicek106이라는 호스트로 ping을 보내본다.
+ping -c 1 alicek106
+.....(수 차례 수행)
+
+--- alicek106 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.095/0.095/0.095/0.000 ms
+root@c83fc641009a:/# ping -c 1 alicek106
+PING alicek106 (172.18.0.4) 56(84) bytes of data.
+64 bytes from network_alias_container3.mybridge (172.18.0.4): icmp_seq=1 ttl=64 time=0.084 ms
+
+--- alicek106 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.084/0.084/0.084/0.000 ms
+root@c83fc641009a:/# ping -c 1 alicek106
+PING alicek106 (172.18.0.2) 56(84) bytes of data.
+64 bytes from network_alias_container1.mybridge (172.18.0.2): icmp_seq=1 ttl=64 time=0.147 ms
+
+--- alicek106 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.147/0.147/0.147/0.000 ms
+root@c83fc641009a:/# ping -c 1 alicek106
+PING alicek106 (172.18.0.2) 56(84) bytes of data.
+64 bytes from network_alias_container1.mybridge (172.18.0.2): icmp_seq=1 ttl=64 time=0.087 ms
+
+--- alicek106 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.087/0.087/0.087/0.000 ms
+root@c83fc641009a:/# ping -c 1 alicek106
+PING alicek106 (172.18.0.4) 56(84) bytes of data.
+64 bytes from network_alias_container3.mybridge (172.18.0.4): icmp_seq=1 ttl=64 time=0.092 ms
+
+--- alicek106 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.092/0.092/0.092/0.000 ms
+root@c83fc641009a:/# ping -c 1 alicek106
+PING alicek106 (172.18.0.3) 56(84) bytes of data.
+64 bytes from network_alias_container2.mybridge (172.18.0.3): icmp_seq=1 ttl=64 time=0.127 ms
+
+
+# alicek106 호스트에 172.18.0.2~4의 대역대가 (테스트 컨테이너1,2,3) 응답한다.
+* 순차적으로 호출되는 것이 아닌 이유는, 도커 엔진에 내장된 DNS가 '라운드 로빈' 방식이기 때문이다.
+* 이 DNS는 'alicek106'이라는 호스트 이름을 --net-alias 옵션으로
+   alicek106을 설정한 컨테이너로 변환(resolve)하기 때문이다.
+
+# DNS 확인
+
+# OS 업데이트
+apt-get update
+
+# DNS 패키지 설치
+apt-get install dnsutils
+
+root@c83fc641009a:/# dig alicek106
+
+; <<>> DiG 9.9.5-3ubuntu0.19-Ubuntu <<>> alicek106
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 45644
+;; flags: qr rd ra; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;alicek106.                     IN      A
+
+;; ANSWER SECTION:
+alicek106.              600     IN      A       172.18.0.2
+alicek106.              600     IN      A       172.18.0.3
+alicek106.              600     IN      A       172.18.0.4
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.11#53(127.0.0.11)
+;; WHEN: Wed Dec 29 06:44:56 UTC 2021
+;; MSG SIZE  rcvd: 102
+

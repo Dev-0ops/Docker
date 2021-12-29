@@ -1,0 +1,16 @@
+None은 말 그대로 아무런 네트워크를 쓰지 않는 것을 의미한다.
+
+# none 네트워크 환경의 컨테이너 생성
+docker run -i -t --name network_none \
+--net none \
+ubuntu:14.04
+
+# 내부 네트워크 조회
+root@c81601215317:/# ifconfig
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)

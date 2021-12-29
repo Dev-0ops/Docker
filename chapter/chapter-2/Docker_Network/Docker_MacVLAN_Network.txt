@@ -1,0 +1,83 @@
+MacVLAN은 호스트의 네트워크 인터페이스 카드를 가상화해 물리 네트워크 환경을
+컨테이너에게 동일하게 제공하는 기능이다.
+
+따라서 컨테이너는 물리 네트워크상에서 가상의 맥(MAC) 주소를 가지며,
+해당 네트워크에 연결된 다른 장치와의 통신이 가능진다.
+
+* MacVLAN에 연결된 컨테이너는 기본적으로 할당되는 IP 대역인 172.17.x.x 대신
+네트워크 장비의 IP를 할당받기 때문이다.
+
+# 해당 testing을 위해 하나의 서브넷에 두 개의 인스턴스를 만들어 테스트하였다.
+# testing_subnet info
+IP 주소 범위
+10.0.0.0/24
+게이트웨이
+10.0.0.1
+
+
+#server01 info
+ifconfig eth0 | grep "inet "
+        inet 10.0.0.6  netmask 255.255.255.255  broadcast 10.0.0.6
+
+#server02 info
+ifconfig eth0 | grep "inet "
+				inet 10.0.0.7  netmask 255.255.255.255  broadcast 10.0.0.7
+
+# 위 서브넷 대역대와 gateway를 사용하는 macvlan 컨테이너 생성
+docker network create -d macvlan --subnet=10.0.0.0/24 \
+--ip-range=10.0.0.64/28 --gateway=10.0.0.1 \
+-o macvlan_mode=bridge -o parent=eth0 my_macvlan
+
+# 서버 2 macvlan 생성
+docker network create -d macvlan --subnet=10.0.0.0/24 \
+--ip-range=10.0.0.128/28 --gateway=10.0.0.1 \
+-o macvlan_mode=bridge -o parent=eth0 my_macvlan
+
+* -d : 네트워크 드라이버로 macvlan을 사용한다는 것을 명시(--driver와 똑 같다)
+# run 명령어의 -d와 create 명령어의 -d가 다르다는 것을 유의하자.
+
+* --subnet : 컨테이너가 사용할 네트워크 정보를 입력한다. (실제 IP 대역을 입력해야 한다.)
+* --ip-range : MacVLAN을 생성하는 호스트에서 사용할 컨테이너의 IP범위를 입력한다.
+	이때 IP 범위가 겹쳐 동일한 IP의 컨테이너가 생성된다면 동작하지 않을 수 있다.
+* --gateway : 네트워크에 설정된 게이트웨이 입력 (실제 gateway 값을 입력한다.)
+* -o : 네트워크의 추가적인 옵션을 설정한다. 
+	/ macvlan_mode=bridge 의 경우 macvlan의 모드를 bridge로 설정한 것
+	/ parent=eth0 은 부생성될 컨테이너 네트워크 인터페이스의 부모(parent) 인터페이스를
+		eth0으로 지정해 --subnet=10.0.0.0/24 해당 대역의 IP를 할당 받는 것
+
+# MacVLAN을 사용하는 컨테이너 1생성
+docker run -it --name c1 --hostname c1 \
+--network my_macvlan \
+ubuntu:14.04
+
+# 네트워크 인터페이스 확인
+root@c1:/# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+6: eth0@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1460 qdisc noqueue state UP group default 
+    link/ether 02:42:0a:00:00:40 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.0.64/24 brd 10.0.0.255 scope global eth0
+       valid_lft forever preferred_lft forever
+
+# MacVLAN을 사용하는 컨테이너 2생성
+docker run -it --name c2 --hostname c2 \
+--network my_macvlan \
+ubuntu:14.04
+
+
+# 네트워크 인터페이스 확인
+root@c2:/# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+6: eth0@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1460 qdisc noqueue state UP group default 
+    link/ether 02:42:0a:00:00:80 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.0.128/24 brd 10.0.0.255 scope global eth0
+       valid_lft forever preferred_lft forever
+
+
+# 실패, 아무래도 public에서 망으로 나갈때 서로를 찾을 수 없기 때문인 것 같다.
+

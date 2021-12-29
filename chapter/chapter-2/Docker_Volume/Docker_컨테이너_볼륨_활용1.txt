@@ -1,0 +1,82 @@
+도커 이미지로 컨테이너를 생성하면 이미지는 읽기 전용이 되어, 컨테이너의 변경 사항만 별도로 
+저장해서 각 컨테이너의 정보를 보존한다.
+그러나 애플리케이션을 구동하면서 쌓이는 데이터는 컨테이너 레이어 계층에 존재하기 때문에, 
+컨테이너를 삭제하면 해당 데이터 또한 삭제되는 문제가 있따.
+따라서 실제 호스트의 볼륨 디렉토리와 컨테이너 레이어 계층의 디렉토리를 공유 혹은 사용하여
+컨테이너의 삭제 시 에도 데이터가 저장될 수 있도록 합니다.  
+
+mysql 생성
+
+docker run -d \
+--name wordpressdb_hostvolume \
+-e MYSQL_ROOT_PASSWORD=password \
+-e MYSQL_DATABASE=wordpress \
+-v /home/wordpress_db:/var/lib/mysql \
+mysql:5.7
+
+wordpress 생성
+
+docker run -d \
+-e WORDPRESS_DB_PASSWORD=password \
+--name wordpress_hostvolume \
+--link wordpressdb_hostvolume:mysql \
+-p 80 \
+wordpress
+
+#실제 디렉토리를 확인하면 볼륨이 저장된걸 볼 수 있디.
+ls /home/wordpress_db
+
+-v 옵션은 호스트의 디렉토리와 컨테이너의 디렉터리를 공유한다는 옵션이다.
+* 이때 미리 디렉토리를 생성하지 않아도, 도커가 이를 자동으로 생성한다.
+
+# 컨테이너 종료
+docker stop wordpress_hostvolume wordpressdb_hostvolume
+
+# 컨테이너 삭제 
+docker rm wordpress_hostvolume wordpressdb_hostvolume
+
+#컨테이너를 삭제해도 볼륨이 저장된걸 볼 수 있디.
+ls /home/wordpress_db
+auto.cnf    client-cert.pem  ib_logfile0  mysql               public_key.pem   sys
+ca-key.pem  client-key.pem   ib_logfile1  performance_schema  server-cert.pem  wordpress
+ca.pem      ib_buffer_pool   ibdata1      private_key.pem     server-key.pem
+
+
+동시에 여러개의 -v옵션
+- 디렉터리 단위의 공유뿐 아니라 단일 파일 단위의 공유도 가능하다.
+
+echo hello >> /home/hello && echo hello2 >> /home/hello2
+
+docker run -i -t \
+--name file_volume \
+-v /home/hello:/hello \
+-v /home/hello2:/hello2 \
+ubuntu:14.04
+
+cat hello && cat hello2
+
+
+이미 디렉토리와 컨테이너에 같은 파일이 존재할 때 
+
+# 미리 준비된 이미지 사용
+docker run -i -t --name volume_dummy alicek106/volume_test
+
+# testdir_2 경로에 test file 확인
+ls /home/testdir_2
+test
+
+# 이미 존재하는 디렉토리를 참조하여 컨테이너 속 이미 존재하는 디렉토리를 공유 시킨다.
+docker run -i -t \
+--name volume_overide \
+-v /home/wordpress_db:/home/testdir_2 \
+alicek106/volume_test
+
+# 변경된 디렉토리 확인
+ls /home/testdir_2/
+auto.cnf    client-cert.pem  ib_logfile0  mysql               public_key.pem   sys
+ca-key.pem  client-key.pem   ib_logfile1  performance_schema  server-cert.pem  wordpress
+ca.pem      ib_buffer_pool   ibdata1      private_key.pem     server-key.pemㅣ
+
+* 이를 통해서 이미지에 원래 존재하던 디렉터리에 호스트의 볼륨을 공유하면,
+컨테이너의 디렉토리자체가 덮어씌워진다는 것을 알 수 있다.
+
